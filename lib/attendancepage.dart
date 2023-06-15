@@ -37,9 +37,10 @@ class AttendancePageState extends State<AttendancePage> {
   final tokenManager = TokenManager(); // Create an instance of TokenManager
   String courseName = ''; // Add a variable to store the course name
   String stream = ''; // Add a variable to store the stream
-  List<bool> isSelected = []; // Add a list to track the selection status of each student
-  List<AttendanceModel> selectedStudents = []; 
-  bool _isMounted = false; 
+  List<bool> isSelected =
+      []; // Add a list to track the selection status of each student
+  List<AttendanceModel> selectedStudents = [];
+  bool _isMounted = false;
 
   Future<String> getCourseName() async {
     try {
@@ -83,9 +84,10 @@ class AttendancePageState extends State<AttendancePage> {
   @override
   void initState() {
     super.initState();
-     _isMounted = true; // Set the mounted state to true
+    _isMounted = true; // Set the mounted state to true
     getCourseName().then((name) {
-      if (_isMounted) { // Check if the widget is still mounted before calling setState
+      if (_isMounted) {
+        // Check if the widget is still mounted before calling setState
         setState(() {
           courseName = name;
         });
@@ -97,7 +99,8 @@ class AttendancePageState extends State<AttendancePage> {
 
   @override
   void dispose() {
-    _isMounted = false; // Set the mounted state to false when disposing the widget
+    _isMounted =
+        false; // Set the mounted state to false when disposing the widget
     super.dispose();
   }
 
@@ -157,7 +160,7 @@ class AttendancePageState extends State<AttendancePage> {
       backgroundColor: Color.fromRGBO(255, 255, 255, 1),
       body: Container(
         child: Padding(
-          padding: const EdgeInsets.only(top: 20, bottom: 0),
+          padding: const EdgeInsets.only(top: 50, bottom: 0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -169,17 +172,17 @@ class AttendancePageState extends State<AttendancePage> {
                       Text(
                         courseName,
                         style: TextStyle(
-                          fontSize: 27,
+                          fontSize: 22,
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.w600,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      SizedBox(height: 10),
+                      SizedBox(height: 5),
                       Text(
                         stream, // Add the stream variable here
                         style: TextStyle(
-                          fontSize: 25,
+                          fontSize: 20,
                           fontFamily: "Poppins",
                           fontWeight: FontWeight.w600,
                         ),
@@ -230,6 +233,7 @@ class AttendancePageState extends State<AttendancePage> {
                                   selectedStudents.contains(student)
                                       ? Icons.check_circle
                                       : Icons.circle,
+                                  size: 40,
                                   color: selectedStudents.contains(student)
                                       ? Color.fromRGBO(4, 29, 83, 1)
                                       : Colors.grey,
