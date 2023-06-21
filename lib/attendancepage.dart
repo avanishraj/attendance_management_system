@@ -273,8 +273,79 @@ class AttendancePageState extends State<AttendancePage> {
                     ),
                   ),
                   onSubmit: () {
-                    markAttendance(
-                        selectedStudents); // Call the function to mark attendance
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return Dialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          child: Container(
+                            padding: EdgeInsets.all(20.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Confirm Attendance',
+                                  style: TextStyle(
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 20.0),
+                                Text(
+                                  'Selected Students:',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 10.0),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: selectedStudents.map((student) {
+                                    return Text(
+                                      student.name,
+                                      style: TextStyle(fontSize: 14.0),
+                                    );
+                                  }).toList(),
+                                ),
+                                SizedBox(height: 20.0),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButton(
+                                      child: Text(
+                                        'Cancel',
+                                        style: TextStyle(fontSize: 16.0),
+                                      ),
+                                      onPressed: () {
+                                        Navigator.of(context)
+                                            .pop(); // Close the dialog
+                                      },
+                                    ),
+                                    SizedBox(width: 10.0),
+                                    ElevatedButton(
+                                      child: Text(
+                                        'Confirm',
+                                        style: TextStyle(fontSize: 16.0),
+                                      ),
+                                      onPressed: () {
+                                        Navigator.of(context)
+                                            .pop(); // Close the dialog
+                                        markAttendance(
+                                            selectedStudents); // Call the function to mark attendance
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
                   },
                 ),
               ),
