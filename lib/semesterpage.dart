@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:attendance_management_system/forget_pass_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'attendancepage.dart';
 import 'loginpage.dart';
+// import 'package:intl/intl.dart';
 import 'token_manager.dart';
 
 class SemesterPage extends StatefulWidget {
@@ -16,12 +18,52 @@ class SemesterPageState extends State<SemesterPage> {
   late List<String> streams = [];
   late List<String> semesters = [];
   late List<String> subjects = [];
-  late List<Map<String, dynamic>> batches = [];
+  late List<String> batchs = [];
+  late List<dynamic> classDetails = [];
+  late List<Map<String, dynamic>> batchData = [];
+  
   String? _selectedSchool;
   String? _selectedStream;
   String? _selectedSemester;
   String? _selectedSubject;
   String? _selectedBatchID;
+  String? _selectedTimestamp;
+  String? _selectedBatch;
+  // String? timestamp = getCurrentDateTimeFormatted();
+  List<String> timestamps = [
+    DateTime.now().toString(),
+    '9:00am - 10:00am',
+    '10:00am - 11:00am',
+    '11:00am - 12:00pm',
+    '12:00pm - 1:00pm',
+    '1:00pm - 2:00pm',
+    '2:00pm - 3:00pm',
+    '3:00pm - 4:00pm',
+    '4:00pm - 5:00pm'
+  ];
+
+//   List<String> getTimestamps() {
+//   final now = DateTime.now();
+//   final timestamps = List.generate(25, (index) {
+//     final startTimestamp = now.subtract(Duration(hours: index + 1));
+//     final endTimestamp = now.subtract(Duration(hours: index));
+
+//     final startHour = startTimestamp.hour.toString().padLeft(2, '0');
+//     final startMinute = startTimestamp.minute.toString().padLeft(2, '0');
+//     final endHour = endTimestamp.hour.toString().padLeft(2, '0');
+//     final endMinute = endTimestamp.minute.toString().padLeft(2, '0');
+
+//     final startTime = '$startHour:$startMinute';
+//     final endTime = '$endHour:$endMinute';
+
+//     final formattedTimestamp = '$startTime - $endTime';
+
+//     return formattedTimestamp;
+//   });
+
+//   return timestamps;
+// }
+
   bool _isLoading = false;
   late String name = '';
   final storage = FlutterSecureStorage(); // Initialize storage
@@ -86,22 +128,6 @@ class SemesterPageState extends State<SemesterPage> {
         ),
       );
     }
-  }
-
-  String? getSubjectCode(String subjectName) {
-    final Map<String, String> subjectCodeMap = {
-      'Software Engineering': 'ARD201',
-      'Convex Optimisation': 'ABS212',
-      'Introduction to Machine Learning': 'ARM206',
-      'Operating System': 'ARD204',
-      'Design and Analysis of Algorithms': 'ARM208',
-      'Maths': 'ICT207',
-      'DSA': 'ICT204',
-      'Data Mining': 'ARM207',
-    };
-    // ignore: avoid_print
-    print(subjectCodeMap[subjectName]);
-    return subjectCodeMap[subjectName];
   }
 
   void updateStateWithBatches(List<dynamic> batchesData) {
@@ -200,55 +226,55 @@ class SemesterPageState extends State<SemesterPage> {
                 ],
               ),
             ),
-            body: Container(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
-                  Container(
-                    height: 10,
-                    child: Center(
-                      child: Icon(
-                        Icons.person_rounded,
-                        size: 60,
+            body: SingleChildScrollView(
+              child: Container(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    Container(
+                      height: 10,
+                      child: Center(
+                        child: Icon(
+                          Icons.person_rounded,
+                          size: 60,
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(
-                    height: 15,
-                  ),
-                  Container(
-                    child: Column(
-                      children: <Widget>[
-                        Container(
-                          child: Center(
+                    SizedBox(
+                      height: 60,
+                    ),
+                    Container(
+                      child: Column(
+                        children: <Widget>[
+                          Container(
+                            child: Center(
+                              child: Text(
+                                name ?? '', // Display the name variable
+                                style: TextStyle(
+                                  fontFamily: "Poppins",
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.start,
+                              ),
+                            ),
+                          ),
+                          Container(
                             child: Text(
-                              name ?? '', // Display the name variable
+                              "Professor",
                               style: TextStyle(
                                 fontFamily: "Poppins",
-                                fontSize: 30,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 20,
                               ),
                               textAlign: TextAlign.start,
                             ),
                           ),
-                        ),
-                        Container(
-                          child: Text(
-                            "Professor",
-                            style: TextStyle(
-                              fontFamily: "Poppins",
-                              fontSize: 20,
-                            ),
-                            textAlign: TextAlign.start,
+                          SizedBox(
+                            height: 30.0,
                           ),
-                        ),
-                        SizedBox(
-                          height: 30.0,
-                        ),
-                        Container(
-                          child: Center(
-                            child: Column(
-                              children: <Widget>[
+                          Container(
+                            child: Center(
+                              child: Column(children: <Widget>[
                                 _selectedSchool == null
                                     ? CircularProgressIndicator()
                                     : Padding(
@@ -329,14 +355,14 @@ class SemesterPageState extends State<SemesterPage> {
                                                   BorderRadius.circular(5),
                                               isExpanded: true,
                                               iconEnabledColor: Colors.white,
+                                              value: _selectedSemester,
                                               underline: SizedBox(),
-                                              value: _selectedStream,
-                                              items: streams.map((stream) {
+                                              items: semesters.map((semester) {
                                                 return DropdownMenuItem<String>(
-                                                  value: stream,
+                                                  value: semester,
                                                   child: Center(
                                                     child: Text(
-                                                      stream,
+                                                      semester.toString(),
                                                       style: TextStyle(
                                                         fontSize: 18,
                                                         color: Colors.white,
@@ -348,7 +374,66 @@ class SemesterPageState extends State<SemesterPage> {
                                               onChanged: (newValue) {
                                                 setState(() {
                                                   _selectedStream = newValue;
-                                                  _selectedSemester = null;
+                                                  _selectedBatch = null;
+                                                  _selectedSubject = null;
+                                                });
+                                              },
+                                              hint: _selectedSemester == null
+                                                  ? Center(
+                                                      child: Text(
+                                                        'Select Semester',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 18,
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : null,
+                                              dropdownColor:
+                                                  Color.fromRGBO(0, 70, 121, 1),
+                                            ),
+                                          ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Container(
+                                    margin: EdgeInsets.all(10.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: Color.fromRGBO(4, 29, 83, 1),
+                                    ),
+                                    width: 320,
+                                    alignment: Alignment.center,
+                                    child: _selectedSchool == null
+                                        ? null
+                                        : Container(
+                                            child: DropdownButton<String>(
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              isExpanded: true,
+                                              iconEnabledColor: Colors.white,
+                                              underline: SizedBox(),
+                                              value: _selectedStream,
+                                              items: streams.map((stream) {
+                                                return DropdownMenuItem<String>(
+                                                  value: stream,
+                                                  child: Center(
+                                                    child: Text(
+                                                      semester.toString(),
+                                                      style: TextStyle(
+                                                        fontSize: 18,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                              onChanged: (newValue) {
+                                                setState(() {
+                                                  _selectedSemester = newValue;
+                                                  _selectedBatch = null;
+                                                  _selectedSubject = null;
                                                 });
                                               },
                                               hint: _selectedStream == null
@@ -386,14 +471,14 @@ class SemesterPageState extends State<SemesterPage> {
                                                   BorderRadius.circular(5),
                                               isExpanded: true,
                                               iconEnabledColor: Colors.white,
-                                              value: _selectedSemester,
                                               underline: SizedBox(),
-                                              items: semesters.map((semester) {
+                                              value: _selectedBatch,
+                                              items: batchs.map((batch) {
                                                 return DropdownMenuItem<String>(
-                                                  value: semester,
+                                                  value: batch,
                                                   child: Center(
                                                     child: Text(
-                                                      semester,
+                                                      batch,
                                                       style: TextStyle(
                                                         fontSize: 18,
                                                         color: Colors.white,
@@ -404,13 +489,14 @@ class SemesterPageState extends State<SemesterPage> {
                                               }).toList(),
                                               onChanged: (newValue) {
                                                 setState(() {
-                                                  _selectedSemester = newValue;
+                                                  _selectedBatch = newValue;
+                                                  _selectedSubject = null;
                                                 });
                                               },
-                                              hint: _selectedSemester == null
+                                              hint: _selectedBatch == null
                                                   ? Center(
                                                       child: Text(
-                                                        'Select Semester',
+                                                        'Select Batch',
                                                         style: TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 18,
@@ -461,6 +547,8 @@ class SemesterPageState extends State<SemesterPage> {
                                               onChanged: (newValue) {
                                                 setState(() {
                                                   _selectedSubject = newValue;
+                                                  _selectedBatch = null;
+                                                  selectedBatchGroup = null;
                                                 });
                                               },
                                               hint: _selectedSubject == null
@@ -480,9 +568,64 @@ class SemesterPageState extends State<SemesterPage> {
                                           ),
                                   ),
                                 ),
-                                SizedBox(
-                                  height: 40,
+                                Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Container(
+                                    margin: EdgeInsets.all(5.0),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: Color.fromRGBO(4, 29, 83, 1),
+                                    ),
+                                    width: 320,
+                                    alignment: Alignment.center,
+                                    child: DropdownButton<String>(
+                                      borderRadius: BorderRadius.circular(5),
+                                      isExpanded: true,
+                                      iconEnabledColor: Colors.white,
+                                      value:
+                                          _selectedTimestamp, // Set the currently selected timestamp
+                                      underline: SizedBox(),
+                                      items: timestamps.map((item) {
+                                        return DropdownMenuItem<String>(
+                                          value: item,
+                                          child: Center(
+                                            child: Text(
+                                              item,
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: (newValue) {
+                                        setState(() {
+                                          _selectedTimestamp =
+                                              newValue; // Update the selected timestamp
+                                        });
+                                      },
+                                      hint: Center(
+                                        child: Text(
+                                          'Select Time', // Default hint text
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                      ),
+                                      dropdownColor:
+                                          Color.fromRGBO(0, 70, 121, 1),
+                                    ),
+                                  ),
                                 ),
+
+                                // SizedBox(
+                                //   height: 20, // Adjust the height as needed
+                                // ),
+                                // SizedBox(
+                                //   height: 40,
+                                // ),
                                 Padding(
                                   padding: const EdgeInsets.all(28.0),
                                   child: Container(
@@ -529,105 +672,29 @@ class SemesterPageState extends State<SemesterPage> {
                                                 _isLoading = true;
                                               });
                                               try {
-                                                final token = await tokenManager
-                                                    .getToken(); // Get token using TokenManager
-                                                if (token == null) {
-                                                  throw Exception(
-                                                      'Token not found');
-                                                }
-
-                                                final batchIdValue =
-                                                    await getBatchId();
-                                                if (batchIdValue != null) {
-                                                  final jsonData = jsonEncode({
-                                                    'code': getSubjectCode(
-                                                        _selectedSubject!),
-                                                    'batchId': batchIdValue,
-                                                  });
-                                                  print(getSubjectCode(
-                                                      _selectedSubject!));
-                                                  print(batchIdValue);
-
-                                                  final url = Uri.parse(
-                                                      'https://sdcusarattendance.onrender.com/api/v1/generatePID');
-
-                                                  final response =
-                                                      await http.post(
-                                                    url,
-                                                    headers: {
-                                                      'Authorization': token,
-                                                      'Content-Type':
-                                                          'application/json',
-                                                    },
-                                                    body: jsonData,
-                                                  );
-
-                                                  if (response.statusCode ==
-                                                          200 ||
-                                                      response.statusCode ==
-                                                          201) {
-                                                    final responseData =
-                                                        jsonDecode(
-                                                                response.body)
-                                                            as Map<String,
-                                                                dynamic>;
-                                                    print(
-                                                        'Response Data: $responseData');
-                                                    // Process the response data as needed
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              AttendancePage()),
-                                                    );
-                                                  } else {
-                                                    print(
-                                                        'Response Status Code: ${response.statusCode}');
-                                                    print(
-                                                        'Response Body: ${response.body}');
-                                                    throw Exception(
-                                                        'Failed to generate PID. Status code: ${response.statusCode}');
-                                                  }
-                                                } else {
-                                                  print(
-                                                      'Failed to retrieve batch ID');
-                                                }
+                                                print(_selectedBatch);
+                                                print(_selectedSemester);
+                                                // print(period_id);
+                                                // Attempt to process the selected data.
                                               } catch (e) {
-                                                print('Exception details: $e');
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) =>
-                                                      AlertDialog(
-                                                    title: Text('Error'),
-                                                    content: Text(
-                                                        'An error occurred while generating PID.'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () {
-                                                          Navigator.of(context)
-                                                              .pop(); // Close the dialog
-                                                          Navigator.of(context)
-                                                              .pop(); // Navigate back to LoginPage
-                                                        },
-                                                        child: Text('OK'),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
+                                                print('An error occurred: $e');
                                               }
+                                              setState(() {
+                                                _isLoading = false;
+                                              });
                                             }
                                           : null,
                                     ),
                                   ),
                                 ),
-                              ],
+                              ]),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
