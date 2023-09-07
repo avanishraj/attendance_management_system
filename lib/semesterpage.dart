@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'attendancepage.dart';
 import 'loginpage.dart';
+import 'package:time_range_picker/time_range_picker.dart';
 // import 'package:intl/intl.dart';
 import 'token_manager.dart';
 
@@ -17,52 +18,52 @@ class SemesterPageState extends State<SemesterPage> {
   late List<String> schools = [];
   late List<String> streams = [];
   late List<String> semesters = [];
+
   late List<String> subjects = [];
   late List<String> batchs = [];
   late List<dynamic> classDetails = [];
   late List<Map<String, dynamic>> batchData = [];
-  
+
   String? _selectedSchool;
   String? _selectedStream;
   String? _selectedSemester;
   String? _selectedSubject;
   String? _selectedBatchID;
-  String? _selectedTimestamp;
+  // String? _selectedTimestamp;
   String? _selectedBatch;
+  String? selectedSubjectType;
+  String? selectedBatchGroup;
   // String? timestamp = getCurrentDateTimeFormatted();
-  List<String> timestamps = [
-    DateTime.now().toString(),
-    '9:00am - 10:00am',
-    '10:00am - 11:00am',
-    '11:00am - 12:00pm',
-    '12:00pm - 1:00pm',
-    '1:00pm - 2:00pm',
-    '2:00pm - 3:00pm',
-    '3:00pm - 4:00pm',
-    '4:00pm - 5:00pm'
-  ];
+  // List<String> timestamps = [
+  //   DateTime.now().toString(),
+  //   '9:00am - 10:00am',
+  //   '10:00am - 11:00am',
+  //   '11:00am - 12:00pm',
+  //   '12:00pm - 1:00pm',
+  //   '1:00pm - 2:00pm',
+  //   '2:00pm - 3:00pm',
+  //   '3:00pm - 4:00pm',
+  //   '4:00pm - 5:00pm'
+  // ];
 
-//   List<String> getTimestamps() {
-//   final now = DateTime.now();
-//   final timestamps = List.generate(25, (index) {
-//     final startTimestamp = now.subtract(Duration(hours: index + 1));
-//     final endTimestamp = now.subtract(Duration(hours: index));
+  List<String> subjectTypes = ['lab', 'theory'];
+  List<String> batchGroups = ['A & B', 'A', 'B'];
 
-//     final startHour = startTimestamp.hour.toString().padLeft(2, '0');
-//     final startMinute = startTimestamp.minute.toString().padLeft(2, '0');
-//     final endHour = endTimestamp.hour.toString().padLeft(2, '0');
-//     final endMinute = endTimestamp.minute.toString().padLeft(2, '0');
+  List<String> batchOptions = [];
 
-//     final startTime = '$startHour:$startMinute';
-//     final endTime = '$endHour:$endMinute';
-
-//     final formattedTimestamp = '$startTime - $endTime';
-
-//     return formattedTimestamp;
-//   });
-
-//   return timestamps;
-// }
+  void fetchBatchOptions() {
+    if (selectedSubjectType == "lab") {
+      setState(() {
+        batchOptions = ["A", "B"];
+        selectedBatchGroup = null;
+      });
+    } else if (selectedSubjectType == "theory") {
+      setState(() {
+        batchOptions = ["A & B"];
+        selectedBatchGroup = "A & B";
+      });
+    }
+  }
 
   bool _isLoading = false;
   late String name = '';
@@ -73,7 +74,8 @@ class SemesterPageState extends State<SemesterPage> {
       _selectedSchool != null &&
       _selectedStream != null &&
       _selectedSemester != null &&
-      _selectedSubject != null;
+      _selectedSubject != null &&
+      _selectedBatch != null;
 
   Future<void> fetchData(BuildContext context) async {
     try {
@@ -85,25 +87,37 @@ class SemesterPageState extends State<SemesterPage> {
       }
 
       final response = await http.get(
-        Uri.parse('https://sdcusarattendance.onrender.com/api/v1/getClasses'),
+        Uri.parse('https://newsdcattendance.onrender.com/generateClasses'),
         headers: {
           'Authorization':
               token, // Include the token in the Authorization header
         },
       );
+
       print('Token : ${token}');
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
+        // print(jsonData);
+
+        print(jsonData['data']['user']);
+        print(jsonData['data']['school']);
+        print(jsonData['data']['user']);
+        print(jsonData['data']['batchData']);
+        print('batchData'.runtimeType);
+        List<dynamic> batchesInfo =
+            List<dynamic>.from(jsonData['data']['batchData']);
+        print(batchesInfo.runtimeType);
         setState(() {
-          name = jsonData['data']['name'];
+          name = jsonData['data']['user'];
           _selectedSchool =
               jsonData['data'] != null && jsonData['data']['school'] != null
                   ? jsonData['data']['school'].toString()
                   : null;
           List<dynamic> batchesData =
-              jsonData['data'] != null && jsonData['data']['batches'] != null
-                  ? jsonData['data']['batches']
+              jsonData['data'] != null && jsonData['data']['batchData'] != null
+                  ? batchesInfo
                   : [];
+
           updateStateWithBatches(batchesData);
         });
       } else {
@@ -111,6 +125,7 @@ class SemesterPageState extends State<SemesterPage> {
       }
     } catch (e) {
       print('Exception details: $e');
+      print(e);
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -135,16 +150,20 @@ class SemesterPageState extends State<SemesterPage> {
     Set<String> uniqueStreams = Set<String>();
     Set<String> uniqueSemesters = Set<String>();
     Set<String> uniqueSubjects = Set<String>();
+    Set<String> uniqueBatch = Set<String>();
     List<Map<String, dynamic>> batchesList = [];
     for (var batch in batchesData) {
-      if (batch['school'] != null && batch['school'] != _selectedSchool) {
-        uniqueSchools.add(batch['school']);
-      }
+      // if (batch['school'] != null && batch['school'] != _selectedSchool) {
+      //   uniqueSchools.add(batch['school']);
+      // }
       if (batch['stream'] != null && batch['stream'] != _selectedStream) {
         uniqueStreams.add(batch['stream']);
       }
       if (batch['semester'] != null && batch['semester'] != _selectedSemester) {
         uniqueSemesters.add(batch['semester']);
+      }
+      if (batch['batch'] != null && batch['batch'] != _selectedBatch) {
+        uniqueBatch.add(batch['batch']);
       }
       if (batch['subject_name'] != null &&
           batch['subject_name'] != _selectedSubject) {
@@ -152,11 +171,13 @@ class SemesterPageState extends State<SemesterPage> {
       }
       batchesList.add(batch);
     }
+
     schools = uniqueSchools.toList();
     streams = uniqueStreams.toList();
     semesters = uniqueSemesters.toList();
     subjects = uniqueSubjects.toList();
-    batches = batchesList;
+    batchs = uniqueBatch.toList();
+    batchData = batchesList;
     if (_selectedSchool != null && !schools.contains(_selectedSchool!)) {
       schools.add(_selectedSchool!);
     }
@@ -165,6 +186,9 @@ class SemesterPageState extends State<SemesterPage> {
     }
     if (_selectedSemester != null && !semesters.contains(_selectedSemester!)) {
       semesters.add(_selectedSemester!);
+    }
+    if (_selectedBatch != null && !batchs.contains(_selectedBatch!)) {
+      batchs.add(_selectedBatch!);
     }
     if (_selectedSubject != null && !subjects.contains(_selectedSubject!)) {
       subjects.add(_selectedSubject!);
@@ -191,39 +215,43 @@ class SemesterPageState extends State<SemesterPage> {
             backgroundColor: Color.fromRGBO(255, 255, 255, 1),
             appBar: AppBar(
               elevation: 0,
-              backgroundColor: Colors.white,
-              automaticallyImplyLeading: false,
-              title: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Container(
-                      alignment: Alignment.topRight,
-                      color: Color.fromRGBO(255, 255, 255, 1),
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          await tokenManager.deleteToken();
-                          Navigator.of(context).pushAndRemoveUntil(
+              backgroundColor: Color.fromRGBO(4, 29, 83, 1),
+              // automaticallyImplyLeading: false,
+            ),
+            drawer: Drawer(
+              child: Container(
+                child: ListView(
+                  children: [
+                    DrawerHeader(
+                        child: CircleAvatar(
+                      backgroundImage:
+                          AssetImage("assets/images/img_ggsipulogo1.png"),
+                    )),
+                    ListTile(
+                      leading: Icon(Icons.reset_tv_outlined),
+                      title: Text("Reset Password"),
+                      onTap: () {
+                        Navigator.push(
+                            context,
                             MaterialPageRoute(
-                                builder: (context) => LoginScreen()),
-                            (route) => false,
-                          );
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(
-                            Color.fromRGBO(4, 29, 83, 1),
-                          ),
-                        ),
-                        icon: Icon(
-                          Icons.logout_sharp,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          'Logout',
-                        ),
-                      ),
+                              builder: (context) => ForgetPasswordPage(),
+                            ));
+                      },
                     ),
-                  ),
-                ],
+                    ListTile(
+                      leading: Icon(Icons.logout_outlined),
+                      title: Text("Logout"),
+                      onTap: () async {
+                        await tokenManager.deleteToken();
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                              builder: (context) => LoginScreen()),
+                          (route) => false,
+                        );
+                      },
+                    )
+                  ],
+                ),
               ),
             ),
             body: SingleChildScrollView(
@@ -317,6 +345,7 @@ class SemesterPageState extends State<SemesterPage> {
                                                     null; // Reset selected stream
                                                 _selectedSemester =
                                                     null; // Reset selected semester
+                                                _selectedBatch = null;
                                                 _selectedSubject =
                                                     null; // Reset selected subject
                                               });
@@ -373,9 +402,11 @@ class SemesterPageState extends State<SemesterPage> {
                                               }).toList(),
                                               onChanged: (newValue) {
                                                 setState(() {
-                                                  _selectedStream = newValue;
+                                                  _selectedSemester = newValue;
                                                   _selectedBatch = null;
                                                   _selectedSubject = null;
+                                                  selectedBatchGroup = null;
+                                                  selectedSubjectType = null;
                                                 });
                                               },
                                               hint: _selectedSemester == null
@@ -420,7 +451,7 @@ class SemesterPageState extends State<SemesterPage> {
                                                   value: stream,
                                                   child: Center(
                                                     child: Text(
-                                                      semester.toString(),
+                                                      stream,
                                                       style: TextStyle(
                                                         fontSize: 18,
                                                         color: Colors.white,
@@ -431,8 +462,10 @@ class SemesterPageState extends State<SemesterPage> {
                                               }).toList(),
                                               onChanged: (newValue) {
                                                 setState(() {
-                                                  _selectedSemester = newValue;
+                                                  _selectedStream = newValue;
                                                   _selectedBatch = null;
+                                                  selectedBatchGroup = null;
+                                                  selectedSubjectType = null;
                                                   _selectedSubject = null;
                                                 });
                                               },
@@ -467,36 +500,28 @@ class SemesterPageState extends State<SemesterPage> {
                                         ? null
                                         : Container(
                                             child: DropdownButton<String>(
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                              isExpanded: true,
-                                              iconEnabledColor: Colors.white,
-                                              underline: SizedBox(),
-                                              value: _selectedBatch,
-                                              items: batchs.map((batch) {
-                                                return DropdownMenuItem<String>(
-                                                  value: batch,
-                                                  child: Center(
-                                                    child: Text(
-                                                      batch,
-                                                      style: TextStyle(
-                                                        fontSize: 18,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList(),
+                                              value: selectedSubjectType,
                                               onChanged: (newValue) {
                                                 setState(() {
-                                                  _selectedBatch = newValue;
+                                                  selectedSubjectType =
+                                                      newValue!;
                                                   _selectedSubject = null;
+                                                  selectedBatchGroup = null;
+                                                  fetchBatchOptions();
                                                 });
                                               },
-                                              hint: _selectedBatch == null
+                                              items: subjectTypes.map<
+                                                      DropdownMenuItem<String>>(
+                                                  (String value) {
+                                                return DropdownMenuItem<String>(
+                                                  value: value,
+                                                  child: Text(value),
+                                                );
+                                              }).toList(),
+                                              hint: selectedSubjectType == null
                                                   ? Center(
                                                       child: Text(
-                                                        'Select Batch',
+                                                        'Select Subject Type',
                                                         style: TextStyle(
                                                           color: Colors.white,
                                                           fontSize: 18,
@@ -568,64 +593,141 @@ class SemesterPageState extends State<SemesterPage> {
                                           ),
                                   ),
                                 ),
+
                                 Padding(
                                   padding: const EdgeInsets.all(2.0),
                                   child: Container(
-                                    margin: EdgeInsets.all(5.0),
+                                    margin: EdgeInsets.all(10.0),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
                                       color: Color.fromRGBO(4, 29, 83, 1),
                                     ),
                                     width: 320,
                                     alignment: Alignment.center,
-                                    child: DropdownButton<String>(
-                                      borderRadius: BorderRadius.circular(5),
-                                      isExpanded: true,
-                                      iconEnabledColor: Colors.white,
-                                      value:
-                                          _selectedTimestamp, // Set the currently selected timestamp
-                                      underline: SizedBox(),
-                                      items: timestamps.map((item) {
-                                        return DropdownMenuItem<String>(
-                                          value: item,
-                                          child: Center(
-                                            child: Text(
-                                              item,
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                color: Colors.white,
-                                              ),
+                                    child: _selectedSchool == null
+                                        ? null
+                                        : Container(
+                                            child: DropdownButton<String>(
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                              isExpanded: true,
+                                              iconEnabledColor: Colors.white,
+                                              underline: SizedBox(),
+                                              value: _selectedBatch,
+                                              items: batchs.map((batch) {
+                                                return DropdownMenuItem<String>(
+                                                  value: batch,
+                                                  child: Center(
+                                                    child: Text(
+                                                      batch,
+                                                      style: TextStyle(
+                                                        fontSize: 18,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                              onChanged: (newValue) {
+                                                setState(() {
+                                                  _selectedBatch = newValue;
+                                                  selectedBatchGroup = null;
+                                                });
+                                              },
+                                              hint: _selectedBatch == null
+                                                  ? Center(
+                                                      child: Text(
+                                                        'Select Batch',
+                                                        style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 18,
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : null,
+                                              dropdownColor:
+                                                  Color.fromRGBO(0, 70, 121, 1),
                                             ),
                                           ),
-                                        );
-                                      }).toList(),
-                                      onChanged: (newValue) {
-                                        setState(() {
-                                          _selectedTimestamp =
-                                              newValue; // Update the selected timestamp
-                                        });
-                                      },
-                                      hint: Center(
-                                        child: Text(
-                                          'Select Time', // Default hint text
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                      ),
-                                      dropdownColor:
-                                          Color.fromRGBO(0, 70, 121, 1),
-                                    ),
                                   ),
                                 ),
-
-                                // SizedBox(
-                                //   height: 20, // Adjust the height as needed
-                                // ),
-                                // SizedBox(
-                                //   height: 40,
-                                // ),
+                                if (selectedSubjectType != "theory")
+                                  Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Container(
+                                      margin: EdgeInsets.all(10.0),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        color: Color.fromRGBO(4, 29, 83, 1),
+                                      ),
+                                      width: 320,
+                                      alignment: Alignment.center,
+                                      child: _selectedSchool == null
+                                          ? null
+                                          : Container(
+                                              child: DropdownButton<String>(
+                                                value: selectedBatchGroup,
+                                                onChanged: (newValue) {
+                                                  setState(() {
+                                                    selectedBatchGroup =
+                                                        newValue!;
+                                                  });
+                                                },
+                                                items: batchGroups.map<
+                                                        DropdownMenuItem<
+                                                            String>>(
+                                                    (String value) {
+                                                  return DropdownMenuItem<
+                                                      String>(
+                                                    value: value,
+                                                    child: Text(value),
+                                                  );
+                                                }).toList(),
+                                                hint: selectedBatchGroup == null
+                                                    ? Center(
+                                                        child: Text(
+                                                          'Select Batch Group',
+                                                          style: TextStyle(
+                                                            color: Colors.white,
+                                                            fontSize: 18,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : null,
+                                                dropdownColor: Color.fromRGBO(
+                                                    0, 70, 121, 1),
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                Padding(
+                                  padding: const EdgeInsets.all(28.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          minimumSize: Size(320, 50),
+                                          backgroundColor:
+                                              Color.fromRGBO(0, 70, 121, 1),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(50),
+                                          ),
+                                        ),
+                                        onPressed: () async {
+                                          TimeRange result =
+                                              await showTimeRangePicker(
+                                            context: context,
+                                          );
+                                          print("result " + result.toString());
+                                        },
+                                        child: Text("Select Time"),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                
                                 Padding(
                                   padding: const EdgeInsets.all(28.0),
                                   child: Container(
@@ -658,7 +760,8 @@ class SemesterPageState extends State<SemesterPage> {
                                                           Color>(Colors.white),
                                                 ),
                                               ),
-                                            ): Text(
+                                            )
+                                          : Text(
                                               "Continue",
                                               style: TextStyle(
                                                 fontSize: 22,
@@ -672,10 +775,32 @@ class SemesterPageState extends State<SemesterPage> {
                                                 _isLoading = true;
                                               });
                                               try {
-                                                print(_selectedBatch);
-                                                print(_selectedSemester);
-                                                // print(period_id);
-                                                // Attempt to process the selected data.
+                                                // Find the selected batch data
+                                                final selectedBatchData =
+                                                    batchData.firstWhere(
+                                                  (batch) =>
+                                                      batch["subject_name"] ==
+                                                          _selectedSubject &&
+                                                      batch["batch"] ==
+                                                          _selectedBatch,
+                                                );
+
+                                                if (selectedBatchData != null) {
+                                                  final batchId =
+                                                      selectedBatchData[
+                                                          "batch_id"];
+                                                  final periodId =
+                                                      selectedBatchData[
+                                                          "period_id"];
+                                                  print("Batch ID: $batchId");
+                                                  print("Period ID: $periodId");
+
+                                                  // Now, you have batchId and periodId. Send them to the backend as needed.
+                                                  // You can use a network request library like http package to send a POST request.
+                                                } else {
+                                                  print(
+                                                      "Selected subject and batch combination not found.");
+                                                }
                                               } catch (e) {
                                                 print('An error occurred: $e');
                                               }
@@ -708,9 +833,9 @@ class SemesterPageState extends State<SemesterPage> {
     );
   }
 
-  Future<String?> getBatchId() async {
+  Future<dynamic> getBatchDetails() async {
     final url =
-        Uri.parse('https://sdcusarattendance.onrender.com/api/v1/getClasses');
+        Uri.parse('https://attendancesdcusar.onrender.com/api/v1/getClasses');
 
     try {
       final token = await tokenManager.getToken();
@@ -727,15 +852,39 @@ class SemesterPageState extends State<SemesterPage> {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
+        print(jsonResponse);
 
         if (jsonResponse['success'] == true) {
           final data = jsonResponse['data'];
-          final batches = data['batches'] as List<dynamic>;
+          final batchData = data['batchData'] as List<dynamic>;
 
-          if (batches.isNotEmpty) {
-            final batch = batches.first;
-            final batchId = batch['batch_id'] as String;
-            return batchId;
+          if (batchData.isNotEmpty) {
+            dynamic data;
+
+            for (final batch in batchData) {
+              if (batch["stream"] == _selectedStream &&
+                  batch["semester"] == _selectedSemester &&
+                  batch["batch"] == _selectedBatch) {
+                final batchId = batch['batch_id'] as int;
+                final subjCode = batch['subject_code'];
+
+                data = [
+                  batchId,
+                  subjCode,
+                  _selectedSemester,
+                  _selectedStream,
+                  _selectedBatch,
+                  batch["subject_name"],
+                  batch["course"]
+                ];
+                break;
+              } else {
+                print('No class found');
+              }
+            }
+
+            print(data);
+            return data;
           }
         } else {
           print('API request failed: ${jsonResponse['message']}');
@@ -746,8 +895,10 @@ class SemesterPageState extends State<SemesterPage> {
 
       return null; // Return null if the API response is invalid or no batch ID found
     } catch (e) {
-      print('Exception in getBatchId(): $e');
+      print('Exception in getBatchDetails(): $e');
       return null; // Return null in case of any exception
     }
   }
 }
+
+
